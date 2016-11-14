@@ -46,7 +46,7 @@ public class SystemsReciprocalIsochart extends Application {
         stage.setTitle("RS: Zone of Isotopic Stability Calculation");
         //defining the axes
         final NumberAxis xAxis = new NumberAxis(0, 120, 4);
-        final NumberAxis yAxis = new NumberAxis();
+        final NumberAxis yAxis = new NumberAxis(0, 350, 10);
         xAxis.setLabel("Atomic Number (Z)");
         yAxis.setLabel("Mass (u)");
         
@@ -65,7 +65,7 @@ public class SystemsReciprocalIsochart extends Application {
         PreparedStatement ps;
 
         /*
-         * NIST data (smaller)
+         * NIST data.
          */
         ps = Database.db.prepareStatement(
             "SELECT z,isotope FROM " + Isotope.TABLE
@@ -76,8 +76,39 @@ public class SystemsReciprocalIsochart extends Application {
         lineChart.getData().add(nist);
         
         /*
+         * Reference lines, 1, 2, 3.
+        */
+        XYChart.Series ref = new XYChart.Series();
+        ref.setName("Stability limit");
+        ref.getData().add(new XYChart.Data(1,236));
+        ref.getData().add(new XYChart.Data(92,236));
+        ref.getData().add(new XYChart.Data(92,0));
+        lineChart.getData().add(ref);
+        ref = new XYChart.Series();
+        ref.setName("Minimum Mass");
+        ref.getData().add(new XYChart.Data(1,2));
+        ref.getData().add(new XYChart.Data(118,2*118));
+        lineChart.getData().add(ref);
+        ref = new XYChart.Series();
+        ref.setName("Maximum Mass");
+        ref.getData().add(new XYChart.Data(1,3));
+        ref.getData().add(new XYChart.Data(118,4*118-1));
+        lineChart.getData().add(ref);
+        
+        /*
+         * NIST data, (z,mass).
+         */
+        ps = Database.db.prepareStatement(
+            "SELECT distinct z,standard_atomic_weight FROM " + Isotope.TABLE
+            + " ORDER BY z"
+        );
+        nist = Isotope.xychart(ps);
+        nist.setName("Standard Atomic Weight");
+        lineChart.getData().add(nist);
+        
+        /*
          * Calculated zone of isotopic stability.
-         * This is the "1" series in chart.css.
+         * This is the "4" series in chart.css.
          */
         XYChart.Series series = new XYChart.Series();
         series.setName("Calculated Zone of Stability");
@@ -94,24 +125,6 @@ public class SystemsReciprocalIsochart extends Application {
             series.getData().add(new XYChart.Data(z, Math.floor(mass)));
         }
         lineChart.getData().add(series);
-        
-        /*
-         * Mass limit reference line.
-        */
-        XYChart.Series ref = new XYChart.Series();
-        ref.setName("Mass Limit");
-        ref.getData().add(new XYChart.Data(1,236));
-        ref.getData().add(new XYChart.Data(92,236));
-        lineChart.getData().add(ref);
-        
-        /*
-         * Radioactive atomic number boundary.
-        */
-        XYChart.Series zref = new XYChart.Series();
-        zref.setName("Stability Limit");
-        zref.getData().add(new XYChart.Data(92,0));
-        zref.getData().add(new XYChart.Data(92,236));
-        lineChart.getData().add(zref);
         
         /*
         * Draw the graph, styled by chart.css.
