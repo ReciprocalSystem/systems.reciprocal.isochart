@@ -28,7 +28,6 @@ import javafx.stage.Stage;
 import systems.reciprocal.Database;
 import systems.reciprocal.Rs;
 import systems.reciprocal.db.physics.Isotope;
-import systems.reciprocal.db.physics.Nubase;
 
 /**
  * Plot observed isotope mass data versus RS calculated.
@@ -37,100 +36,145 @@ import systems.reciprocal.db.physics.Nubase;
  */
 public class SystemsReciprocalIsochart extends Application {
 
-    public static final double IRR = 128. * (1 + 2. / 9.);
-    public static final int MAG_IONIZATION = 1;
+    int magnetic_ionization_level = 1;
+
+    /**
+     * Add actual NIST isotope data.
+     *
+     * This is formatted by chart.css to remove lines and act like a scatter
+     * plot. This is the "0" series in chart.css.
+     *
+     * @return
+     * @throws java.sql.SQLException
+     */
+    XYChart.Series nist_data() throws SQLException {
+        PreparedStatement ps = Database.db.prepareStatement(
+            "SELECT z,isotope FROM " + Isotope.TABLE
+            + " ORDER BY z,isotope"
+        );
+        XYChart.Series nist = Isotope.xychart(ps);
+        nist.setName("NIST Isotope Data");
+        return nist;
+    }
+
+    /**
+     * Reference lines for mass limits.
+     *
+     * @param ion
+     * @return
+     */
+    XYChart.Series mass_limit(int ion) {
+        XYChart.Series ref = new XYChart.Series();
+        int z = Rs.unstable_element(ion);
+        ref.setName("Stability limit");
+        ref.getData().add(new XYChart.Data(1, Rs.MASS_LIMIT));
+        ref.getData().add(new XYChart.Data(z, Rs.MASS_LIMIT));
+        ref.getData().add(new XYChart.Data(z, 0));
+        return ref;
+    }
+
+    /**
+     * Minimum mass for an element.
+     *
+     * Calculated by the rotational mass, since you cannot have a fraction of a
+     * rotation. min_mass = 2z.
+     *
+     * @return
+     */
+    XYChart.Series minimum_mass() {
+        XYChart.Series ref = new XYChart.Series();
+        ref.setName("Minimum Mass");
+        ref.getData().add(new XYChart.Data(1, 2));
+        ref.getData().add(new XYChart.Data(118, 2 * 118));
+        return ref;
+    }
+
+    /**
+     * Maximum mass for an element.
+     *
+     * The maximum mass is reached when the vibrational mass (the gravitational
+     * charge) cancels the atomic rotation. Since 2 vibrations = 1 rotation, and
+     * 2 amu = 1 rotation, it is at 4z-1 (4z starts disintegration).
+     *
+     * Note that mass can exceed this, but destroys rotational structure and
+     * changes the atomic number in compensation.
+     *
+     * @return
+     */
+    XYChart.Series maximum_mass() {
+        XYChart.Series ref = new XYChart.Series();
+        ref.setName("Maximum Mass");
+        ref.getData().add(new XYChart.Data(1, 3));
+        ref.getData().add(new XYChart.Data(Rs.Z_LIMIT, 4 * Rs.Z_LIMIT - 1));
+        return ref;
+    }
+
+    /**
+     * Grab the standard atomic weight from the NIST table.
+     *
+     * @return
+     * @throws SQLException
+     */
+    XYChart.Series standard_weight() throws SQLException {
+        PreparedStatement ps = Database.db.prepareStatement(
+            "SELECT distinct z,standard_atomic_weight FROM "
+            + Isotope.TABLE
+            + " ORDER BY z"
+        );
+        XYChart.Series nist = Isotope.xychart(ps);
+        nist.setName("Standard Atomic Weight");
+        return nist;
+    }
+
+    XYChart.Series zone_of_stability(int ion) {
+        XYChart.Series series = new XYChart.Series();
+        series.setName("Calculated Zone of Stability");
+        for (int z = 1;
+            z <= Rs.Z_LIMIT; z++) {
+            series.getData().add(
+                new XYChart.Data(
+                    z,
+                    Math.floor(Rs.standard_mass(z, ion)
+                    )
+                )
+            );
+        }
+        return series;
+    }
 
     @Override
     public void start(Stage stage) throws SQLException {
-
+        // Minor tick marks
+        final int xspacing = 4;
+        final int yspacing = 10;
+        /*
+         * Fix the axis sizes so we get a little extra space before
+         * and after the atomic number, and don't overshoot the mass
+         * because of the calculated zone of stability curve at 118.
+         */
         stage.setTitle("RS: Zone of Isotopic Stability Calculation");
-        //defining the axes
-        final NumberAxis xAxis = new NumberAxis(0, 120, 4);
-        final NumberAxis yAxis = new NumberAxis(0, 350, 10);
-        xAxis.setLabel("Atomic Number (Z)");
-        yAxis.setLabel("Mass (u)");
-        
+        final NumberAxis xAxis = new NumberAxis("Atomic Number (Z)", 0, 120, xspacing);
+        final NumberAxis yAxis = new NumberAxis("Mass (u)", 0, 350, yspacing);
+        xAxis.setMinorTickCount(xspacing);
+        yAxis.setMinorTickCount(yspacing/2);
         /*
          * Create the chart.
          */
         final LineChart<Number, Number> lineChart
             = new LineChart<>(xAxis, yAxis);
         lineChart.setTitle("Observed v. Calculated Isotopic Mass");
-        
-        /*
-         * Add actual isotope data.
-         * This is formatted by chart.css to remove lines and act like
-         * a scatter plot. This is the "0" series in chart.css.
-         */
-        PreparedStatement ps;
-
-        /*
-         * NIST data.
-         */
-        ps = Database.db.prepareStatement(
-            "SELECT z,isotope FROM " + Isotope.TABLE
-            + " ORDER BY z,isotope"
-        );
-        XYChart.Series nist = Isotope.xychart(ps);
-        nist.setName("NIST Isotope Data");
-        lineChart.getData().add(nist);
-        
-        /*
-         * Reference lines, 1, 2, 3.
-        */
-        XYChart.Series ref = new XYChart.Series();
-        ref.setName("Stability limit");
-        ref.getData().add(new XYChart.Data(1,236));
-        ref.getData().add(new XYChart.Data(92,236));
-        ref.getData().add(new XYChart.Data(92,0));
-        lineChart.getData().add(ref);
-        ref = new XYChart.Series();
-        ref.setName("Minimum Mass");
-        ref.getData().add(new XYChart.Data(1,2));
-        ref.getData().add(new XYChart.Data(118,2*118));
-        lineChart.getData().add(ref);
-        ref = new XYChart.Series();
-        ref.setName("Maximum Mass");
-        ref.getData().add(new XYChart.Data(1,3));
-        ref.getData().add(new XYChart.Data(118,4*118-1));
-        lineChart.getData().add(ref);
-        
-        /*
-         * NIST data, (z,mass).
-         */
-        ps = Database.db.prepareStatement(
-            "SELECT distinct z,standard_atomic_weight FROM " + Isotope.TABLE
-            + " ORDER BY z"
-        );
-        nist = Isotope.xychart(ps);
-        nist.setName("Standard Atomic Weight");
-        lineChart.getData().add(nist);
-        
-        /*
-         * Calculated zone of isotopic stability.
-         * This is the "4" series in chart.css.
-         */
-        XYChart.Series series = new XYChart.Series();
-        series.setName("Calculated Zone of Stability");
-        for (int z = 1; z <= 118; z++) {
-            /*
-             * Calculated mass: 2Z + G (magnetic ionization = 1).
-             * G = magnetic_ionization * z^2 / IRR.
-             */
-            double mass = 2 * z + MAG_IONIZATION * z * z / IRR;
-            /*
-             * Discrete units means floor() of mass value.
-             * Fractional parts do not count.
-             */
-            series.getData().add(new XYChart.Data(z, Math.floor(mass)));
-        }
-        lineChart.getData().add(series);
-        
+        lineChart.getData().add(nist_data());
+        lineChart.getData().add(mass_limit(magnetic_ionization_level));
+        lineChart.getData().add(minimum_mass());
+        lineChart.getData().add(maximum_mass());
+        lineChart.getData().add(standard_weight());
+        lineChart.getData().add(zone_of_stability(magnetic_ionization_level));
         /*
         * Draw the graph, styled by chart.css.
          */
         Scene scene = new Scene(lineChart, 800, 600);
-        scene.getStylesheets().add(getClass().getResource("chart.css").toExternalForm());
+        scene.getStylesheets()
+            .add(getClass().getResource("chart.css").toExternalForm());
         stage.setScene(scene);
         stage.show();
     }
