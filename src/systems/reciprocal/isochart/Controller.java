@@ -9,7 +9,6 @@ import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ResourceBundle;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.collections.FXCollections;
@@ -19,7 +18,12 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
+import javafx.scene.input.InputMethodEvent;
+import javafx.scene.input.MouseEvent;
 import systems.reciprocal.Database;
 import systems.reciprocal.Rs;
 import systems.reciprocal.db.physics.Isotope;
@@ -37,6 +41,7 @@ public class Controller implements Initializable {
     XYChart.Series seriesNist;
     XYChart.Series seriesWeight;
     XYChart.Series seriesZoneStability = new XYChart.Series();
+    ObservableList<XYChart.Series<Number, Number>> lineChartData = FXCollections.observableArrayList();
 
     @FXML
     private LineChart<Number, Number> lineChart;
@@ -52,15 +57,28 @@ public class Controller implements Initializable {
     private CheckBox checkWeight;
     @FXML
     private CheckBox checkZone;
+    @FXML
+    private Slider sliderMagIonLevel;
+    @FXML
+    private Button buttonEarthNorm;
+    @FXML
+    private Label textMagIonLevel;
+
+    protected void updateMagIonLevel() {
+        sliderMagIonLevel.setValue((double) magnetic_ionization_level);
+        textMagIonLevel.setText(Integer.toString(magnetic_ionization_level));
+        seriesZoneStability.setData(zone_of_stability());
+        seriesStabilityLimit.setData(stabilityLimit());
+    }
 
     protected void seriesVisible(XYChart.Series series, boolean state) {
         series.getNode().setVisible(state);
-        ObservableList<XYChart.Data<Number,Number>> list = series.getData();
+        ObservableList<XYChart.Data<Number, Number>> list = series.getData();
         list.forEach((item) -> {
             item.getNode().setVisible(state);
         });
     }
-    
+
     /**
      * Add actual NIST isotope data.
      *
@@ -86,13 +104,14 @@ public class Controller implements Initializable {
      * @param ion
      * @return
      */
-    XYChart.Series stabilityLimit(int ion) {
-        int z = Rs.unstable_element(ion);
-        seriesStabilityLimit.setName("Stability limit");
-        seriesStabilityLimit.getData().add(new XYChart.Data(1, Rs.MASS_LIMIT));
-        seriesStabilityLimit.getData().add(new XYChart.Data(z, Rs.MASS_LIMIT));
-        seriesStabilityLimit.getData().add(new XYChart.Data(z, 0));
-        return seriesStabilityLimit;
+    ObservableList<XYChart.Data<Number, Number>> stabilityLimit() {
+        int z = Rs.unstable_element(magnetic_ionization_level);
+        ObservableList<XYChart.Data<Number, Number>> data
+            = FXCollections.observableArrayList();
+        data.add(new XYChart.Data(0, Rs.MASS_LIMIT));
+        data.add(new XYChart.Data(z, Rs.MASS_LIMIT));
+        data.add(new XYChart.Data(z, 0));
+        return data;
     }
 
     /**
@@ -106,7 +125,7 @@ public class Controller implements Initializable {
     XYChart.Series minimum_mass() {
         seriesMinimumMass.setName("Minimum Mass");
         seriesMinimumMass.getData().add(new XYChart.Data(1, 2));
-        seriesMinimumMass.getData().add(new XYChart.Data(118, 2 * 118));
+        seriesMinimumMass.getData().add(new XYChart.Data(Rs.Z_LIMIT, Rs.MASS_LIMIT));
         return seriesMinimumMass;
     }
 
@@ -146,31 +165,43 @@ public class Controller implements Initializable {
         return seriesWeight;
     }
 
-    XYChart.Series zone_of_stability(int ion) {
-        seriesZoneStability.setName("Calculated Zone of Stability");
+    /**
+     * Generate data for zone of isotopic stability.
+     *
+     * @return
+     */
+    ObservableList<XYChart.Data<Number, Number>> zone_of_stability() {
+        ObservableList<XYChart.Data<Number, Number>> data
+            = FXCollections.observableArrayList();
         for (int z = 1;
             z <= Rs.Z_LIMIT; z++) {
-            seriesZoneStability.getData().add(
+            data.add(
                 new XYChart.Data(
                     z,
-                    Math.floor(Rs.standard_mass(z, ion)
+                    Math.floor(Rs.standard_mass(z, magnetic_ionization_level)
                     )
                 )
             );
         }
-        return seriesZoneStability;
+        return data;
     }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         try {
-            ObservableList<XYChart.Series<Number, Number>> lineChartData = FXCollections.observableArrayList();
             lineChartData.add(nist_data());
-            lineChartData.add(stabilityLimit(magnetic_ionization_level));
+            // Stability Limit
+            seriesStabilityLimit.setName("Stability limit");
+            seriesStabilityLimit.setData(stabilityLimit());
+            lineChartData.add(seriesStabilityLimit);
             lineChartData.add(minimum_mass());
             lineChartData.add(maximum_mass());
             lineChartData.add(standard_weight());
-            lineChartData.add(zone_of_stability(magnetic_ionization_level));
+            // Zone of Isotopic Stability
+            seriesZoneStability.setName("Calculated Zone of Stability");
+            seriesZoneStability.setData(zone_of_stability());
+            lineChartData.add(seriesZoneStability);
+            
             lineChart.setData(lineChartData);
             lineChart.createSymbolsProperty();
         } catch (SQLException ex) {
@@ -180,32 +211,49 @@ public class Controller implements Initializable {
 
     @FXML
     private void handleCheckStabilityLimits(ActionEvent event) {
-        seriesVisible(seriesStabilityLimit,checkStabilityLimits.isSelected());
+        seriesVisible(seriesStabilityLimit, checkStabilityLimits.isSelected());
     }
 
     @FXML
     private void handleCheckMinimumMass(ActionEvent event) {
-        seriesVisible(seriesMinimumMass,checkMinimumMass.isSelected());
+        seriesVisible(seriesMinimumMass, checkMinimumMass.isSelected());
     }
 
     @FXML
     private void handleCheckMaximumMass(ActionEvent event) {
-        seriesVisible(seriesMaximumMass,checkMaximumMass.isSelected());
+        seriesVisible(seriesMaximumMass, checkMaximumMass.isSelected());
     }
 
     @FXML
     private void handleCheckNist(ActionEvent event) {
-        seriesVisible(seriesNist,checkNist.isSelected());
+        seriesVisible(seriesNist, checkNist.isSelected());
     }
 
     @FXML
     private void handleCheckWeight(ActionEvent event) {
-        seriesVisible(seriesWeight,checkWeight.isSelected());
+        seriesVisible(seriesWeight, checkWeight.isSelected());
     }
 
     @FXML
     private void handleCheckZone(ActionEvent event) {
-        seriesVisible(seriesZoneStability,checkZone.isSelected());
+        seriesVisible(seriesZoneStability, checkZone.isSelected());
+    }
+
+    @FXML
+    private void handleEarthNorm(ActionEvent event) {
+        magnetic_ionization_level = 1;
+        updateMagIonLevel();
+    }
+
+    @FXML
+    private void handleMagIonLevel(MouseEvent event) {
+        magnetic_ionization_level = (int) sliderMagIonLevel.getValue();
+        updateMagIonLevel();
+    }
+
+    @FXML
+    private void handleMagIonDrag(MouseEvent event) {
+        textMagIonLevel.setText(Integer.toString((int) sliderMagIonLevel.getValue()));
     }
 
 }

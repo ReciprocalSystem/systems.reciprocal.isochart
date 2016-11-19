@@ -4,20 +4,22 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.chart.LineChart?>
 <?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Slider?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="480.0" prefWidth="640.0" styleClass="mainFxmlClass" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8.0.60" fx:controller="systems.reciprocal.isochart.Controller">
+<AnchorPane id="AnchorPane" accessibleHelp="Observed versus calculated values for the zone of isotopic stability, based on the Reciprocal System of theory." maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="480.0" prefWidth="640.0" styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.60" xmlns:fx="http://javafx.com/fxml/1" fx:controller="systems.reciprocal.isochart.Controller">
     <stylesheets>
         <URL value="@chart.css" />
     </stylesheets>
    <HBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
       <children>
-          <LineChart fx:id="lineChart" animated="false" cacheShape="false" centerShape="false" stylesheets="@chart.css" title="Observed v. Calculated Isotopic Mass" HBox.hgrow="ALWAYS">
+          <LineChart fx:id="lineChart" animated="false" cacheShape="false" centerShape="false" stylesheets="@chart.css" title="RS2: Observed v. Calculated Isotopic Mass" HBox.hgrow="ALWAYS">
               <xAxis>
                   <NumberAxis animated="false" autoRanging="false" label="Atomic Number (Z)" minorTickCount="4" side="BOTTOM" tickUnit="4" upperBound="120" />
               </xAxis>
@@ -73,6 +75,33 @@
                      <Insets bottom="10.0" />
                   </padding>
                </CheckBox>
+               <Label text="Mag Ion Level">
+                  <font>
+                     <Font name="System Bold" size="12.0" />
+                  </font>
+                  <padding>
+                     <Insets bottom="10.0" />
+                  </padding>
+               </Label>
+               <HBox prefHeight="100.0" prefWidth="200.0">
+                  <children>
+                     <Slider fx:id="sliderMagIonLevel" majorTickUnit="5.0" max="10.0" minorTickCount="4" onMouseDragged="#handleMagIonDrag" onMouseReleased="#handleMagIonLevel" orientation="VERTICAL" showTickLabels="true" showTickMarks="true" snapToTicks="true" value="1.0">
+                        <padding>
+                           <Insets bottom="10.0" />
+                        </padding>
+                     </Slider>
+                     <VBox prefHeight="200.0" prefWidth="100.0">
+                        <children>
+                           <Label fx:id="textMagIonLevel" text="1">
+                              <padding>
+                                 <Insets left="10.0" />
+                              </padding>
+                           </Label>
+                        </children>
+                     </VBox>
+                  </children>
+               </HBox>
+               <Button fx:id="buttonEarthNorm" mnemonicParsing="false" onAction="#handleEarthNorm" text="Earth Norm" />
             </children>
             <HBox.margin>
                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
