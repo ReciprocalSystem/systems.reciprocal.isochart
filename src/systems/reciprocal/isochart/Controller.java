@@ -9,6 +9,7 @@ import java.net.URL;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.collections.FXCollections;
@@ -52,6 +53,14 @@ public class Controller implements Initializable {
     @FXML
     private CheckBox checkZone;
 
+    protected void seriesVisible(XYChart.Series series, boolean state) {
+        series.getNode().setVisible(state);
+        ObservableList<XYChart.Data<Number,Number>> list = series.getData();
+        list.forEach((item) -> {
+            item.getNode().setVisible(state);
+        });
+    }
+    
     /**
      * Add actual NIST isotope data.
      *
@@ -171,50 +180,32 @@ public class Controller implements Initializable {
 
     @FXML
     private void handleCheckStabilityLimits(ActionEvent event) {
-        seriesStabilityLimit.getNode().setVisible(
-            checkStabilityLimits.isSelected()
-        );
+        seriesVisible(seriesStabilityLimit,checkStabilityLimits.isSelected());
     }
 
     @FXML
     private void handleCheckMinimumMass(ActionEvent event) {
-        seriesMinimumMass.getNode().setVisible(
-            checkMinimumMass.isSelected()
-        );
+        seriesVisible(seriesMinimumMass,checkMinimumMass.isSelected());
     }
 
     @FXML
     private void handleCheckMaximumMass(ActionEvent event) {
-        seriesMaximumMass.getNode().setVisible(
-            checkMaximumMass.isSelected()
-        );
+        seriesVisible(seriesMaximumMass,checkMaximumMass.isSelected());
     }
 
     @FXML
     private void handleCheckNist(ActionEvent event) {
-        boolean state = checkNist.isSelected();
-        seriesNist.getNode().setVisible(state);
-        ObservableList<XYChart.Data<Number,Number>> list = seriesNist.getData();
-        list.forEach((item) -> {
-            item.getNode().setVisible(state);
-        });
+        seriesVisible(seriesNist,checkNist.isSelected());
     }
 
     @FXML
     private void handleCheckWeight(ActionEvent event) {
-        boolean state = checkWeight.isSelected();
-        seriesWeight.getNode().setVisible(state);
-        ObservableList<XYChart.Data<Number,Number>> list = seriesWeight.getData();
-        list.forEach((item) -> {
-            item.getNode().setVisible(state);
-        });
+        seriesVisible(seriesWeight,checkWeight.isSelected());
     }
 
     @FXML
     private void handleCheckZone(ActionEvent event) {
-        seriesZoneStability.getNode().setVisible(
-            checkZone.isSelected()
-        );
+        seriesVisible(seriesZoneStability,checkZone.isSelected());
     }
 
 }
