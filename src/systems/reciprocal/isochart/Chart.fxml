@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.URL?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="480.0" prefWidth="640.0" styleClass="mainFxmlClass" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8.0.60" fx:controller="systems.reciprocal.isochart.Controller">
+    <stylesheets>
+        <URL value="@chart.css" />
+    </stylesheets>
+   <HBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <children>
+          <LineChart fx:id="lineChart" animated="false" cacheShape="false" centerShape="false" stylesheets="@chart.css" title="Observed v. Calculated Isotopic Mass" HBox.hgrow="ALWAYS">
+              <xAxis>
+                  <NumberAxis animated="false" autoRanging="false" label="Atomic Number (Z)" minorTickCount="4" side="BOTTOM" tickUnit="4" upperBound="120" />
+              </xAxis>
+              <yAxis>
+                  <NumberAxis animated="false" autoRanging="false" label="Mass (u)" minorTickVisible="false" side="LEFT" tickUnit="10.0" upperBound="350.0" />
+              </yAxis>
+          </LineChart>
+         <VBox prefWidth="133.0">
+            <children>
+               <Label styleClass="heading" text="Line Visibility">
+                  <padding>
+                     <Insets bottom="10.0" />
+                  </padding>
+                  <font>
+                     <Font name="System Bold" size="12.0" />
+                  </font>
+               </Label>
+               <CheckBox fx:id="checkStabilityLimits" mnemonicParsing="false" onAction="#handleCheckStabilityLimits" selected="true" text="Stability Limits">
+                  <padding>
+                     <Insets bottom="10.0" />
+                  </padding>
+               </CheckBox>
+               <CheckBox fx:id="checkMinimumMass" mnemonicParsing="false" onAction="#handleCheckMinimumMass" selected="true" text="Minimum Mass">
+                  <padding>
+                     <Insets bottom="10.0" />
+                  </padding>
+               </CheckBox>
+               <CheckBox fx:id="checkMaximumMass" mnemonicParsing="false" onAction="#handleCheckMaximumMass" selected="true" text="Maximum Mass">
+                  <padding>
+                     <Insets bottom="10.0" />
+                  </padding>
+               </CheckBox>
+               <Label text="Data Visibility">
+                  <font>
+                     <Font name="System Bold" size="12.0" />
+                  </font>
+                  <padding>
+                     <Insets bottom="10.0" />
+                  </padding>
+               </Label>
+               <CheckBox fx:id="checkNist" mnemonicParsing="false" onAction="#handleCheckNist" selected="true" text="NIST Isotopes">
+                  <padding>
+                     <Insets bottom="10.0" />
+                  </padding>
+               </CheckBox>
+               <CheckBox fx:id="checkWeight" mnemonicParsing="false" onAction="#handleCheckWeight" selected="true" text="Std Atomic Wt">
+                  <padding>
+                     <Insets bottom="10.0" />
+                  </padding>
+               </CheckBox>
+               <CheckBox fx:id="checkZone" mnemonicParsing="false" onAction="#handleCheckZone" selected="true" text="Zone of Stability">
+                  <padding>
+                     <Insets bottom="10.0" />
+                  </padding>
+               </CheckBox>
+            </children>
+            <HBox.margin>
+               <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+            </HBox.margin>
+            <padding>
+               <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+            </padding>
+         </VBox>
+      </children>
+   </HBox>
+</AnchorPane>
