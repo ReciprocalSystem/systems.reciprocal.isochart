@@ -85,7 +85,7 @@
                </Label>
                <HBox prefHeight="100.0" prefWidth="200.0">
                   <children>
-                     <Slider fx:id="sliderMagIonLevel" majorTickUnit="5.0" max="10.0" minorTickCount="4" onMouseDragged="#handleMagIonDrag" onMouseReleased="#handleMagIonLevel" orientation="VERTICAL" showTickLabels="true" showTickMarks="true" snapToTicks="true" value="1.0">
+                     <Slider fx:id="sliderMagIonLevel" majorTickUnit="5.0" max="10.0" minorTickCount="4" onMouseDragged="#handleMagIonDrag" orientation="VERTICAL" showTickLabels="true" showTickMarks="true" snapToTicks="true" value="1.0">
                         <padding>
                            <Insets bottom="10.0" />
                         </padding>

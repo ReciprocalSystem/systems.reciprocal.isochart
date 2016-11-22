@@ -34,14 +34,35 @@ import systems.reciprocal.db.physics.Isotope;
  */
 public class Controller implements Initializable {
 
+    /**
+     * Magnetic ionization level, which controls the capture of neutrinos by an
+     * atomic rotational system.
+     */
     int magnetic_ionization_level = 1;
+    /**
+     * Data for Stability Limit line.
+     */
     XYChart.Series seriesStabilityLimit = new XYChart.Series();
+    /**
+     * Data for Minimum mass line.
+     */
     XYChart.Series seriesMinimumMass = new XYChart.Series();
+    /**
+     * Data for Maximum mass line.
+     */
     XYChart.Series seriesMaximumMass = new XYChart.Series();
+    /**
+     * Data for NIST isotopic mass line.
+     */
     XYChart.Series seriesNist;
+    /**
+     * Data for NIST Standard Atomic Weight line.
+     */
     XYChart.Series seriesWeight;
+    /**
+     * Data for zone of isotopic stability, per Basic Properties of Matter.
+     */
     XYChart.Series seriesZoneStability = new XYChart.Series();
-    ObservableList<XYChart.Series<Number, Number>> lineChartData = FXCollections.observableArrayList();
 
     @FXML
     private LineChart<Number, Number> lineChart;
@@ -85,7 +106,7 @@ public class Controller implements Initializable {
      * This is formatted by chart.css to remove lines and act like a scatter
      * plot. This is the "0" series_mass_limit in chart.css.
      *
-     * @return
+     * @return Data for the isotopic mass vs atomic number plot.
      * @throws java.sql.SQLException
      */
     XYChart.Series nist_data() throws SQLException {
@@ -101,8 +122,7 @@ public class Controller implements Initializable {
     /**
      * Reference lines for mass limits.
      *
-     * @param ion
-     * @return
+     * @return Data for the mass limit lines.
      */
     ObservableList<XYChart.Data<Number, Number>> stabilityLimit() {
         int z = Rs.unstable_element(magnetic_ionization_level);
@@ -120,7 +140,7 @@ public class Controller implements Initializable {
      * Calculated by the rotational mass, since you cannot have a fraction of a
      * rotation. min_mass = 2z.
      *
-     * @return
+     * @return Data for minimum mass line.
      */
     XYChart.Series minimum_mass() {
         seriesMinimumMass.setName("Minimum Mass");
@@ -139,7 +159,7 @@ public class Controller implements Initializable {
      * Note that mass can exceed this, but destroys rotational structure and
      * changes the atomic number in compensation.
      *
-     * @return
+     * @return Data to show the maximum stable mass in the Reciprocal System.
      */
     XYChart.Series maximum_mass() {
         seriesMaximumMass.setName("Maximum Mass");
@@ -151,7 +171,7 @@ public class Controller implements Initializable {
     /**
      * Grab the standard atomic weight from the NIST table.
      *
-     * @return
+     * @return Data for the standard atomic weight by atomic number.
      * @throws SQLException
      */
     XYChart.Series standard_weight() throws SQLException {
@@ -168,7 +188,7 @@ public class Controller implements Initializable {
     /**
      * Generate data for zone of isotopic stability.
      *
-     * @return
+     * @return The data comprising the zone of stability.
      */
     ObservableList<XYChart.Data<Number, Number>> zone_of_stability() {
         ObservableList<XYChart.Data<Number, Number>> data
@@ -186,8 +206,19 @@ public class Controller implements Initializable {
         return data;
     }
 
+    /**
+     * Called once to initialize the chart display.
+     *
+     * Draws all the lines for the chart that we can then manipulate with
+     * events.
+     *
+     * @param url
+     * @param rb
+     */
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        ObservableList<XYChart.Series<Number, Number>> lineChartData
+            = FXCollections.observableArrayList();
         try {
             lineChartData.add(nist_data());
             // Stability Limit
@@ -201,7 +232,7 @@ public class Controller implements Initializable {
             seriesZoneStability.setName("Calculated Zone of Stability");
             seriesZoneStability.setData(zone_of_stability());
             lineChartData.add(seriesZoneStability);
-            
+
             lineChart.setData(lineChartData);
             lineChart.createSymbolsProperty();
         } catch (SQLException ex) {
@@ -209,51 +240,97 @@ public class Controller implements Initializable {
         }
     }
 
+    /**
+     * Checkbox to toggle the display of isotopic stability limits.
+     *
+     * @param event
+     */
     @FXML
     private void handleCheckStabilityLimits(ActionEvent event) {
         seriesVisible(seriesStabilityLimit, checkStabilityLimits.isSelected());
     }
 
+    /**
+     * Checkbox to toggle the display of the minimum mass (2Z) in the RS.
+     *
+     * @param event
+     */
     @FXML
     private void handleCheckMinimumMass(ActionEvent event) {
         seriesVisible(seriesMinimumMass, checkMinimumMass.isSelected());
     }
 
+    /**
+     * Checkbox to toggle the display of the maximum mass in the RS.
+     *
+     * @param event
+     */
     @FXML
     private void handleCheckMaximumMass(ActionEvent event) {
         seriesVisible(seriesMaximumMass, checkMaximumMass.isSelected());
     }
 
+    /**
+     * Checkbox to toggle the display of NIST isotopic mass data.
+     *
+     * @param event
+     */
     @FXML
     private void handleCheckNist(ActionEvent event) {
         seriesVisible(seriesNist, checkNist.isSelected());
     }
 
+    /**
+     * Checkbox to toggle the display of standard atomic weight.
+     *
+     * @param event
+     */
     @FXML
     private void handleCheckWeight(ActionEvent event) {
         seriesVisible(seriesWeight, checkWeight.isSelected());
     }
 
+    /**
+     * Checkbox to toggle the display of the zone of isotopic stability.
+     *
+     * @param event
+     */
     @FXML
     private void handleCheckZone(ActionEvent event) {
         seriesVisible(seriesZoneStability, checkZone.isSelected());
     }
 
+    /**
+     * Set the magnetic ionization level to 1, the norm for the Earth's surface,
+     * and update the chart.
+     *
+     * @param event
+     */
     @FXML
     private void handleEarthNorm(ActionEvent event) {
         magnetic_ionization_level = 1;
         updateMagIonLevel();
     }
 
-    @FXML
-    private void handleMagIonLevel(MouseEvent event) {
-        magnetic_ionization_level = (int) sliderMagIonLevel.getValue();
-        updateMagIonLevel();
-    }
-
+    /**
+     * What to do when the magnetic ionization slider is moved. This event gets
+     * called many times as the slider is sliding, not just when the value
+     * changes, so watch for the value to change before we actually try to
+     * update anything.
+     *
+     * Updates the global variable "magnetic_ionization_level," then adjusts the
+     * graph to match (the isotopic mass curve and the unstable atomic number).
+     *
+     * @param event Slider event changing magnetic ionization level.
+     */
     @FXML
     private void handleMagIonDrag(MouseEvent event) {
-        textMagIonLevel.setText(Integer.toString((int) sliderMagIonLevel.getValue()));
+        int magion = (int) sliderMagIonLevel.getValue();
+        if (magion != magnetic_ionization_level) {
+            magnetic_ionization_level = magion;
+            textMagIonLevel.setText(Integer.toString(magnetic_ionization_level));
+            updateMagIonLevel();
+        }
     }
 
 }
