@@ -22,7 +22,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
-import javafx.scene.input.InputMethodEvent;
 import javafx.scene.input.MouseEvent;
 import systems.reciprocal.Database;
 import systems.reciprocal.Rs;
