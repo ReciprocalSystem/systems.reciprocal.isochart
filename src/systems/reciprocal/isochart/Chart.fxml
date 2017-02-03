@@ -60,7 +60,12 @@
                      <Insets bottom="10.0" />
                   </padding>
                </Label>
-               <CheckBox fx:id="checkNist" mnemonicParsing="false" onAction="#handleCheckNist" selected="true" text="NIST Isotopes">
+               <CheckBox fx:id="checkNist" mnemonicParsing="false" onAction="#handleCheckNist" selected="true" text="Stable">
+                  <padding>
+                     <Insets bottom="10.0" />
+                  </padding>
+               </CheckBox>
+               <CheckBox fx:id="checkUnstable" mnemonicParsing="false" onAction="#handleCheckUnstable" selected="true" text="Unstable">
                   <padding>
                      <Insets bottom="10.0" />
                   </padding>
@@ -85,7 +90,7 @@
                </Label>
                <HBox prefHeight="100.0" prefWidth="200.0">
                   <children>
-                     <Slider fx:id="sliderMagIonLevel" majorTickUnit="5.0" max="10.0" minorTickCount="4" onMouseDragged="#handleMagIonDrag" orientation="VERTICAL" showTickLabels="true" showTickMarks="true" snapToTicks="true" value="1.0">
+                     <Slider fx:id="sliderMagIonLevel" blockIncrement="1.0" majorTickUnit="5.0" max="5.0" min="-5.0" minorTickCount="4" onMouseDragged="#handleMagIonDrag" orientation="VERTICAL" showTickLabels="true" showTickMarks="true" snapToTicks="true" value="1.0">
                         <padding>
                            <Insets bottom="10.0" />
                         </padding>

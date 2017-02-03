@@ -26,6 +26,7 @@ import javafx.scene.input.MouseEvent;
 import systems.reciprocal.Database;
 import systems.reciprocal.Rs;
 import systems.reciprocal.db.physics.Isotope;
+import systems.reciprocal.db.physics.Nubase;
 
 /**
  *
@@ -51,9 +52,13 @@ public class Controller implements Initializable {
      */
     XYChart.Series seriesMaximumMass = new XYChart.Series();
     /**
-     * Data for NIST isotopic mass line.
+     * Data for NIST unstable isotopic mass line.
      */
-    XYChart.Series seriesNist;
+    XYChart.Series seriesNistUnstable;
+    /**
+     * Data for NIST stable isotopic mass line.
+     */
+    XYChart.Series seriesNistStable;
     /**
      * Data for NIST Standard Atomic Weight line.
      */
@@ -89,6 +94,8 @@ public class Controller implements Initializable {
         textMagIonLevel.setText(Integer.toString(magnetic_ionization_level));
         seriesZoneStability.setData(zone_of_stability());
         seriesStabilityLimit.setData(stabilityLimit());
+        seriesMinimumMass.setData(minimum_mass());
+        seriesMaximumMass.setData(maximum_mass());
     }
 
     protected void seriesVisible(XYChart.Series series, boolean state) {
@@ -100,6 +107,26 @@ public class Controller implements Initializable {
     }
 
     /**
+     * Add actual NUBASE isotope data for unstable isotopes.
+     *
+     * This is formatted by chart.css to remove lines and act like a scatter
+     * plot. This is the "0" series_mass_limit in chart.css.
+     *
+     * @return Data for the isotopic mass vs atomic number plot.
+     * @throws java.sql.SQLException
+     */
+    XYChart.Series nist_data_unstable() throws SQLException {
+        PreparedStatement ps = Database.db.prepareStatement(
+            "SELECT z,a FROM " + Nubase.TABLE
+            + " WHERE half_life = 0"
+            + " ORDER BY z,a"
+        );
+        seriesNistUnstable = Isotope.xychart(ps);
+        seriesNistUnstable.setName("Unstable Isotopes");
+        return seriesNistUnstable;
+    }
+
+    /**
      * Add actual NIST isotope data.
      *
      * This is formatted by chart.css to remove lines and act like a scatter
@@ -108,14 +135,14 @@ public class Controller implements Initializable {
      * @return Data for the isotopic mass vs atomic number plot.
      * @throws java.sql.SQLException
      */
-    XYChart.Series nist_data() throws SQLException {
+    XYChart.Series nist_data_stable() throws SQLException {
         PreparedStatement ps = Database.db.prepareStatement(
             "SELECT z,isotope FROM " + Isotope.TABLE
             + " ORDER BY z,isotope"
         );
-        seriesNist = Isotope.xychart(ps);
-        seriesNist.setName("NIST Isotope Data");
-        return seriesNist;
+        seriesNistUnstable = Isotope.xychart(ps);
+        seriesNistUnstable.setName("NIST Isotope Data");
+        return seriesNistUnstable;
     }
 
     /**
@@ -139,13 +166,25 @@ public class Controller implements Initializable {
      * Calculated by the rotational mass, since you cannot have a fraction of a
      * rotation. min_mass = 2z.
      *
+     * Deuterium is a special case because of the low rotational displacement,
+     * 2-1-(1), the (1) effectively cancels one mass unit. This does not happen
+     * with higher elements.
+     *
      * @return Data for minimum mass line.
      */
-    XYChart.Series minimum_mass() {
-        seriesMinimumMass.setName("Minimum Mass");
-        seriesMinimumMass.getData().add(new XYChart.Data(1, 2));
-        seriesMinimumMass.getData().add(new XYChart.Data(Rs.Z_LIMIT, Rs.MASS_LIMIT));
-        return seriesMinimumMass;
+    ObservableList<XYChart.Data<Number, Number>> minimum_mass() {
+        ObservableList<XYChart.Data<Number, Number>> data
+            = FXCollections.observableArrayList();
+        if (magnetic_ionization_level >= 0) {
+            data.add(new XYChart.Data(1, 1)); // Deuterium
+            data.add(new XYChart.Data(1, 2)); // Helium onwards
+            data.add(new XYChart.Data(Rs.Z_LIMIT, Rs.MASS_LIMIT));
+        } else {
+            data.add(new XYChart.Data(1, 1));
+            data.add(new XYChart.Data(1, 2)); // Helium onwards
+            data.add(new XYChart.Data(Rs.Z_LIMIT, 2));  // flat line
+        }
+        return data;
     }
 
     /**
@@ -160,11 +199,18 @@ public class Controller implements Initializable {
      *
      * @return Data to show the maximum stable mass in the Reciprocal System.
      */
-    XYChart.Series maximum_mass() {
+    ObservableList<XYChart.Data<Number, Number>> maximum_mass() {
+        ObservableList<XYChart.Data<Number, Number>> data
+            = FXCollections.observableArrayList();
         seriesMaximumMass.setName("Maximum Mass");
-        seriesMaximumMass.getData().add(new XYChart.Data(1, 3));
-        seriesMaximumMass.getData().add(new XYChart.Data(Rs.Z_LIMIT, 4 * Rs.Z_LIMIT - 1));
-        return seriesMaximumMass;
+        if (magnetic_ionization_level >= 0) {
+            data.add(new XYChart.Data(1, 3));
+            data.add(new XYChart.Data(Rs.Z_LIMIT, 4 * Rs.Z_LIMIT - 1));
+        } else {
+            data.add(new XYChart.Data(1, 2));
+            data.add(new XYChart.Data(Rs.Z_LIMIT, Rs.MASS_LIMIT));
+        }
+        return data;
     }
 
     /**
@@ -219,14 +265,27 @@ public class Controller implements Initializable {
         ObservableList<XYChart.Series<Number, Number>> lineChartData
             = FXCollections.observableArrayList();
         try {
-            lineChartData.add(nist_data());
+            // Nuclear isotope data
+            lineChartData.add(nist_data_unstable());
+
             // Stability Limit
             seriesStabilityLimit.setName("Stability limit");
             seriesStabilityLimit.setData(stabilityLimit());
             lineChartData.add(seriesStabilityLimit);
-            lineChartData.add(minimum_mass());
-            lineChartData.add(maximum_mass());
+
+            // Minimum mass
+            seriesMinimumMass.setName("Minimum Mass");
+            seriesMinimumMass.setData(minimum_mass());
+            lineChartData.add(seriesMinimumMass);
+
+            // Maximum mass
+            seriesMaximumMass.setName("Maximum Mass");
+            seriesMaximumMass.setData(maximum_mass());
+            lineChartData.add(seriesMaximumMass);
+
+            // Standard atomic weights (static from database)
             lineChartData.add(standard_weight());
+
             // Zone of Isotopic Stability
             seriesZoneStability.setName("Calculated Zone of Stability");
             seriesZoneStability.setData(zone_of_stability());
@@ -276,7 +335,7 @@ public class Controller implements Initializable {
      */
     @FXML
     private void handleCheckNist(ActionEvent event) {
-        seriesVisible(seriesNist, checkNist.isSelected());
+        seriesVisible(seriesNistUnstable, checkNist.isSelected());
     }
 
     /**
@@ -297,6 +356,16 @@ public class Controller implements Initializable {
     @FXML
     private void handleCheckZone(ActionEvent event) {
         seriesVisible(seriesZoneStability, checkZone.isSelected());
+    }
+
+    /**
+     * Checkbox to toggle the display of the zone of isotopic stability.
+     *
+     * @param event
+     */
+    @FXML
+    private void handleCheckUnstable(ActionEvent event) {
+
     }
 
     /**
