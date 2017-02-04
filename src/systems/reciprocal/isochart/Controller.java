@@ -24,6 +24,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.input.MouseEvent;
 import systems.reciprocal.Database;
+import static systems.reciprocal.Database.*;
 import systems.reciprocal.Rs;
 import systems.reciprocal.db.physics.Isotope;
 import systems.reciprocal.db.physics.Nubase;
@@ -40,6 +41,11 @@ public class Controller implements Initializable {
      */
     int magnetic_ionization_level = 1;
     /**
+     * Time (in seconds) of what is considered to be a "stable" isotope
+     * half-life.
+     */
+    double stable_half_life = 1E100;
+    /**
      * Data for Stability Limit line.
      */
     XYChart.Series seriesStabilityLimit = new XYChart.Series();
@@ -54,15 +60,15 @@ public class Controller implements Initializable {
     /**
      * Data for NIST unstable isotopic mass line.
      */
-    XYChart.Series seriesNistUnstable;
+    XYChart.Series seriesIsotopeUnstable = new XYChart.Series();
     /**
      * Data for NIST stable isotopic mass line.
      */
-    XYChart.Series seriesNistStable;
+    XYChart.Series seriesIsotopeStable = new XYChart.Series();
     /**
      * Data for NIST Standard Atomic Weight line.
      */
-    XYChart.Series seriesWeight;
+    XYChart.Series seriesWeight = new XYChart.Series();
     /**
      * Data for zone of isotopic stability, per Basic Properties of Matter.
      */
@@ -77,8 +83,6 @@ public class Controller implements Initializable {
     @FXML
     private CheckBox checkMaximumMass;
     @FXML
-    private CheckBox checkNist;
-    @FXML
     private CheckBox checkWeight;
     @FXML
     private CheckBox checkZone;
@@ -88,6 +92,10 @@ public class Controller implements Initializable {
     private Button buttonEarthNorm;
     @FXML
     private Label textMagIonLevel;
+    @FXML
+    private CheckBox checkStable;
+    @FXML
+    private CheckBox checkUnstable;
 
     protected void updateMagIonLevel() {
         sliderMagIonLevel.setValue((double) magnetic_ionization_level);
@@ -107,42 +115,39 @@ public class Controller implements Initializable {
     }
 
     /**
-     * Add actual NUBASE isotope data for unstable isotopes.
+     * Grab stable isotope data from database and build line graph.
      *
-     * This is formatted by chart.css to remove lines and act like a scatter
-     * plot. This is the "0" series_mass_limit in chart.css.
-     *
-     * @return Data for the isotopic mass vs atomic number plot.
-     * @throws java.sql.SQLException
+     * @return
+     * @throws SQLException
      */
-    XYChart.Series nist_data_unstable() throws SQLException {
+    ObservableList<XYChart.Data<Number, Number>> unstableIsotopes() throws SQLException {
+        ObservableList<XYChart.Data<Number, Number>> data
+            = FXCollections.observableArrayList();
         PreparedStatement ps = Database.db.prepareStatement(
             "SELECT z,a FROM " + Nubase.TABLE
-            + " WHERE half_life = 0"
+            + " WHERE half_life>0 AND half_life<="
+            + Double.toString(stable_half_life)
             + " ORDER BY z,a"
         );
-        seriesNistUnstable = Isotope.xychart(ps);
-        seriesNistUnstable.setName("Unstable Isotopes");
-        return seriesNistUnstable;
+        return xychartdata(ps, data);
     }
 
     /**
-     * Add actual NIST isotope data.
+     * Grab stable isotope data from database and build line graph.
      *
-     * This is formatted by chart.css to remove lines and act like a scatter
-     * plot. This is the "0" series_mass_limit in chart.css.
-     *
-     * @return Data for the isotopic mass vs atomic number plot.
-     * @throws java.sql.SQLException
+     * @return
+     * @throws SQLException
      */
-    XYChart.Series nist_data_stable() throws SQLException {
+    ObservableList<XYChart.Data<Number, Number>> stableIsotopes() throws SQLException {
+        ObservableList<XYChart.Data<Number, Number>> data
+            = FXCollections.observableArrayList();
         PreparedStatement ps = Database.db.prepareStatement(
-            "SELECT z,isotope FROM " + Isotope.TABLE
-            + " ORDER BY z,isotope"
+            "SELECT z,a FROM " + Nubase.TABLE
+            + " WHERE half_life<=0 OR half_life>"
+            + Double.toString(stable_half_life)
+            + " ORDER BY z,a"
         );
-        seriesNistUnstable = Isotope.xychart(ps);
-        seriesNistUnstable.setName("NIST Isotope Data");
-        return seriesNistUnstable;
+        return xychartdata(ps, data);
     }
 
     /**
@@ -265,8 +270,15 @@ public class Controller implements Initializable {
         ObservableList<XYChart.Series<Number, Number>> lineChartData
             = FXCollections.observableArrayList();
         try {
-            // Nuclear isotope data
-            lineChartData.add(nist_data_unstable());
+            // Nuclear unstable isotope data
+            seriesIsotopeUnstable.setName("Unstable Isotopes");
+            seriesIsotopeUnstable.setData(unstableIsotopes());
+            lineChartData.add(seriesIsotopeUnstable);
+
+            // Nuclear stable isotope data
+            seriesIsotopeStable.setName("Stable Isotopes");
+            seriesIsotopeStable.setData(stableIsotopes());
+            lineChartData.add(seriesIsotopeStable);
 
             // Stability Limit
             seriesStabilityLimit.setName("Stability limit");
@@ -334,8 +346,18 @@ public class Controller implements Initializable {
      * @param event
      */
     @FXML
-    private void handleCheckNist(ActionEvent event) {
-        seriesVisible(seriesNistUnstable, checkNist.isSelected());
+    private void handleCheckStable(ActionEvent event) {
+        seriesVisible(seriesIsotopeStable, checkStable.isSelected());
+    }
+
+    /**
+     * Checkbox to toggle the display of the zone of isotopic stability.
+     *
+     * @param event
+     */
+    @FXML
+    private void handleCheckUnstable(ActionEvent event) {
+        seriesVisible(seriesIsotopeUnstable, checkUnstable.isSelected());
     }
 
     /**
@@ -356,16 +378,6 @@ public class Controller implements Initializable {
     @FXML
     private void handleCheckZone(ActionEvent event) {
         seriesVisible(seriesZoneStability, checkZone.isSelected());
-    }
-
-    /**
-     * Checkbox to toggle the display of the zone of isotopic stability.
-     *
-     * @param event
-     */
-    @FXML
-    private void handleCheckUnstable(ActionEvent event) {
-
     }
 
     /**

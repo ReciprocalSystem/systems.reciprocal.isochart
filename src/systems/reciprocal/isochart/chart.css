@@ -22,56 +22,68 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     -fx-font-size: 12pt;
 }
 /*
-    The observed data.
+    Unstable isotopes
 */
 .default-color0.chart-series-line {
     -fx-stroke: transparent; 
 }
 .default-color0.chart-line-symbol { 
-    -fx-background-color: green, green; 
+    -fx-background-color: lightgreen, lightgreen; 
 }
 .default-color0.chart-legend-item-symbol{
+    -fx-background-color: lightgreen;
+}
+/*
+    Stable isotopes
+*/
+.default-color1.chart-series-line {
+    -fx-stroke: transparent; 
+}
+.default-color1.chart-line-symbol { 
+    -fx-background-color: green, green; 
+}
+.default-color1.chart-legend-item-symbol{
     -fx-background-color: green;
 }
 /*
     Reference lines.
 */
-.default-color1.chart-line-symbol,
 .default-color2.chart-line-symbol,
-.default-color3.chart-line-symbol
+.default-color3.chart-line-symbol,
+.default-color4.chart-line-symbol
 { 
     -fx-background-color: transparent, transparent; 
 }
-.default-color1.chart-series-line {
+.default-color2.chart-series-line {
     -fx-stroke: red; 
 }
-.default-color1.chart-legend-item-symbol{
+.default-color2.chart-legend-item-symbol{
     -fx-background-color: red;
 }
 
-.default-color2.chart-legend-item-symbol{
+.default-color3.chart-legend-item-symbol{
     -fx-background-color:purple
 }
-.default-color2.chart-series-line {
+.default-color3.chart-series-line {
     -fx-stroke: purple; 
 }
 
-.default-color3.chart-legend-item-symbol{
+.default-color4.chart-legend-item-symbol{
     -fx-background-color: orange;
 }
-.default-color3.chart-series-line {
+.default-color4.chart-series-line {
     -fx-stroke: orange; 
 }
 
 /*
     Calculated data.
 */
-.default-color5.chart-series-line {
+.default-color6.chart-series-line {
     -fx-stroke: blue; 
 }
-.default-color5.chart-line-symbol { 
+.default-color6.chart-line-symbol { 
     -fx-background-color: transparent, transparent; 
 }
-.default-color5.chart-legend-item-symbol{
+.default-color6.chart-legend-item-symbol{
     -fx-background-color: blue;
 }
